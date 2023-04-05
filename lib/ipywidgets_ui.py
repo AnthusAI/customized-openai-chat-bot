@@ -49,21 +49,23 @@ def display_starter_contexts(system_prompt):
             starting_context = file.read()
         system_prompt_with_context = f"{system_prompt}\n\n{starting_context}"
         initial_system_message = {"role": "system", "content": system_prompt_with_context}
-        
+
         # New code to display the starter prompt in the output widget
         output_widget = widgets.Output()
         display(output_widget)
         with output_widget:
             display(widgets.HTML(value=f"<p>{starting_context}</p>"))
         # End of new code
-        
-        display_new_form([initial_system_message])
+
+        display_new_form([initial_system_message], starting_context=os.path.splitext(os.path.basename(starting_context_file))[0])
+
 
     for button, file in zip(buttons, starting_context_files):
         button.description = os.path.splitext(os.path.basename(file))[0].replace("_", " ").replace("-", " ")
         button.on_click(lambda x: on_button_click(x))
 
     display(button_box)
+
 
 import pprint
 import re
@@ -74,8 +76,15 @@ def display_chat_response(output_widget, input_widget, send_button, chat_history
         clear_output()
         display(widgets.Label(value="⏳ Please wait..."))
     massage_prompt = "Always include the sentiment analysis and then --- and then your response.  The customer's question is:\n\n"
-    chat_history.append({"role": "user", "content": massage_prompt + input_widget.value.strip()})
-    input_widget.disabled = True
+    
+    # Check if input_widget is not None before appending the user message
+    if input_widget is not None:
+        chat_history.append({"role": "user", "content": massage_prompt + input_widget.value.strip()})
+    else:
+        chat_history.append({"role": "user", "content": massage_prompt})
+    
+    if input_widget is not None:
+        input_widget.disabled = True
     send_button.disabled = True
     send_button.close()
     response = send_api_call(chat_history)
@@ -106,22 +115,37 @@ def display_chat_response(output_widget, input_widget, send_button, chat_history
 
 # This function handles the send button click event.
 def send_message_handler(output_widget, input_widget, send_button, chat_history):
-    if not input_widget.disabled:
+    if input_widget is None or not input_widget.disabled:
         display_chat_response(output_widget, input_widget, send_button, chat_history)
 
 # This function displays the chat form with an optional initial message.
-def display_new_form(chat_history=None):
+def display_new_form(chat_history=None, starting_context=None):
     if chat_history is None:
         chat_history = []
-    input_field = widgets.Text(
-        placeholder='Enter your message...',
-        layout=widgets.Layout(width='100%')
-    )
+    
+    if starting_context is not None and "popup" in starting_context:
+        input_field = None
+    else:
+        input_field = widgets.Text(
+            placeholder='Enter your message...',
+            layout=widgets.Layout(width='100%')
+        )
+    
     send_button = widgets.Button(
         description='Send',
         button_style='success'
     )
     output_widget = widgets.Output()
-    display(input_field, send_button, output_widget)
-    send_button.on_click(lambda x: send_message_handler(output_widget, input_field, send_button, chat_history))
-    input_field.on_submit(lambda x: send_message_handler(output_widget, input_field, send_button, chat_history))
+    
+    if input_field:
+        display(input_field, send_button, output_widget)
+    else:
+        display(send_button, output_widget)
+    
+    if input_field:
+        send_button.on_click(lambda x: send_message_handler(output_widget, input_field, send_button, chat_history))
+        input_field.on_submit(lambda x: send_message_handler(output_widget, input_field, send_button, chat_history))
+    else:
+        send_button.on_click(lambda x: send_message_handler(output_widget, None, send_button, chat_history))
+
+
