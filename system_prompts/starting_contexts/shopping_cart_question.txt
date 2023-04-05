@@ -1,0 +1,6 @@
+The customer currently has two items in their shopping cart:
+
+Item 1: "The Adventures of Captain Cynical: Destroying Your Hopes and Dreams Since 1999!" This comic could feature a hero who is perpetually sarcastic and pessimistic, always raining on the parade of those around him.
+  Price: $9.99
+Item 2: "The Misadventures of Super Stereotype: Reinforcing Negative Perceptions Since 2005!" This comic could feature a hero who embodies exaggerated stereotypes, perpetuating harmful stereotypes and reinforcing negative perceptions of certain groups.
+  Price: $9.99
