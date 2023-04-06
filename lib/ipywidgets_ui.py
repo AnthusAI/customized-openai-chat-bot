@@ -1,3 +1,6 @@
+import pprint
+import re
+import re
 import os
 import glob
 import importlib
@@ -24,6 +27,9 @@ def generate_system_prompt(prompt_string, starting_context_file):
 
 # This function sends an API call to OpenAI's Chat API with the specified chat history.
 def send_api_call(chat_history):
+    # print("Raw messages hash:")
+    # pprint.pprint(chat_history)
+
     model = "gpt-3.5-turbo"
     response = openai.ChatCompletion.create(
         model=model,
@@ -50,15 +56,12 @@ def display_starter_contexts(system_prompt):
         system_prompt_with_context = f"{system_prompt}\n\n{starting_context}"
         initial_system_message = {"role": "system", "content": system_prompt_with_context}
 
-        # New code to display the starter prompt in the output widget
-        output_widget = widgets.Output()
-        display(output_widget)
         with output_widget:
-            display(widgets.HTML(value=f"<p>{starting_context}</p>"))
-        # End of new code
+            clear_output()  # Add this line to clear the output
+            display(widgets.HTML(value=f"<h3>Starting context to the bot:</h3><p>{starting_context}</p>"))
 
         display_new_form([initial_system_message], starting_context=os.path.splitext(os.path.basename(starting_context_file))[0])
-
+        button_box.close()  # Close the button box after clicking a button
 
     for button, file in zip(buttons, starting_context_files):
         button.description = os.path.splitext(os.path.basename(file))[0].replace("_", " ").replace("-", " ")
@@ -66,10 +69,8 @@ def display_starter_contexts(system_prompt):
 
     display(button_box)
 
-
-import pprint
-import re
-import re
+    output_widget = widgets.Output()  # Add this line to create the output widget
+    display(output_widget)  # Add this line to display the output widget
 
 def display_chat_response(output_widget, input_widget, send_button, chat_history):
     with output_widget:
@@ -81,7 +82,7 @@ def display_chat_response(output_widget, input_widget, send_button, chat_history
     if input_widget is not None:
         chat_history.append({"role": "user", "content": massage_prompt + input_widget.value.strip()})
     else:
-        chat_history.append({"role": "user", "content": massage_prompt})
+        chat_history.append({"role": "user", "content": "There is no messge from the user but don't mention that, just introduce yourself."})
     
     if input_widget is not None:
         input_widget.disabled = True
@@ -101,7 +102,7 @@ def display_chat_response(output_widget, input_widget, send_button, chat_history
     # Display the main message
     with output_widget:
         clear_output()
-        display(widgets.HTML(value=f"<p>{main_message}</p>"))
+        display(widgets.HTML(value=f'<p style="margin-bottom: 0; padding-bottom: 0;">{main_message}</p>'))
 
     # Extract token information from the API response
     prompt_tokens = response['usage']['prompt_tokens']
@@ -109,7 +110,7 @@ def display_chat_response(output_widget, input_widget, send_button, chat_history
     total_tokens = response['usage']['total_tokens']
 
     # Display token information
-    display(widgets.HTML(value=f'<p style="font-family:monospace; font-size:small; color:gray; margin-bottom: 0;">{sentiment_analysis}<br/>Prompt tokens: {prompt_tokens}<br>Response tokens: {completion_tokens}<br>Total tokens: {total_tokens}</p>'))
+    display(widgets.HTML(value=f'<p style="font-family:monospace; font-size:small; color:gray; margin-top: 0; padding-top: 0; line-height: 1em;">{sentiment_analysis + "<br/>" if sentiment_analysis else ""}Prompt tokens: {prompt_tokens}<br>Response tokens: {completion_tokens}<br>Total tokens: {total_tokens}</p>'))
 
     display_new_form(chat_history)
 
