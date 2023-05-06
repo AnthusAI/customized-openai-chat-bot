@@ -30,7 +30,7 @@ def send_api_call(chat_history):
     # print("Raw messages hash:")
     # pprint.pprint(chat_history)
 
-    model = "gpt-3.5-turbo"
+    model = "gpt-4"
     response = openai.ChatCompletion.create(
         model=model,
         messages=chat_history,
@@ -72,6 +72,17 @@ def display_starter_contexts(system_prompt):
     output_widget = widgets.Output()  # Add this line to create the output widget
     display(output_widget)  # Add this line to display the output widget
 
+def process_message(content):
+    # Extract button directives
+    button_directives = re.findall(r'\[button:(.*?)\]', content)
+    content = re.sub(r'\[button:(.*?)\]', '', content)
+
+    # Extract form directives
+    form_directives = re.findall(r'\[form:(.*?)\]', content)
+    content = re.sub(r'\[form:(.*?)\]', '', content)
+
+    return content.strip(), button_directives, form_directives
+
 def display_chat_response(output_widget, input_widget, send_button, chat_history):
     with output_widget:
         clear_output()
@@ -95,7 +106,29 @@ def display_chat_response(output_widget, input_widget, send_button, chat_history
     delimiter = "---"
     parts = content.split(delimiter, 1)
     sentiment_analysis = parts[0].strip() if len(parts) > 1 else ""
-    main_message = parts[-1].strip()
+
+    main_message = parts[1].strip() if len(parts) > 1 else parts[0].strip()
+    main_message, button_directives, form_directives = process_message(main_message)
+
+    chat_history.append({"role": "assistant", "content": main_message})
+
+    # Display the main message
+    with output_widget:
+        clear_output()
+        display(widgets.HTML(value=f'<p style="margin-bottom: 0; padding-bottom: 0;">{main_message}</p>'))
+
+    # Display buttons
+    for button_name in button_directives:
+        display(widgets.Button(description=button_name, button_style='primary', layout=widgets.Layout(margin='5px')))
+
+    # Display forms
+    for form_name in form_directives:
+        if form_name == 'signup':
+            form_layout = widgets.Layout(border='1px solid black', padding='10px', margin='5px')
+            email_input = widgets.Text(placeholder='Enter email address', layout=widgets.Layout(width='100%'))
+            signup_button = widgets.Button(description='Sign up')
+            form_widget = widgets.VBox(children=[email_input, signup_button], layout=form_layout)
+            display(form_widget)
 
     chat_history.append({"role": "assistant", "content": main_message})
 
